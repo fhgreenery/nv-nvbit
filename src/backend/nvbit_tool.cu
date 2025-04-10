@@ -1,4 +1,4 @@
-#include "yosemite.h"
+#include "sanalyzer.h"
 
 #include "backend/nvbit_app_metric.h"
 #include "backend/nvbit_mem_trace.h"
@@ -6,43 +6,42 @@
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
-YosemiteAnalysisTool_t yosemite_tool;
-
+SanitizerOptions_t options;
 
 /* nvbit_at_init() is executed as soon as the nvbit tool is loaded. We
  * typically do initializations in this call. In this case for instance we get
  * some environment variables values which we use as input arguments to the tool
  */
 void nvbit_at_init() {
-    yosemite_init(yosemite_tool);
+    yosemite_init(options);
 
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_at_init();
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_init();
     }
 }
 
 void nvbit_tool_init(CUcontext ctx) {
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_tool_init(ctx);
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_tool_init(ctx);
     }
 }
 
 void nvbit_at_ctx_init(CUcontext ctx) {
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_at_ctx_init(ctx);
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_ctx_init(ctx);
     }
 }
 
 void nvbit_at_ctx_term(CUcontext ctx) {
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_at_ctx_term(ctx);
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_ctx_term(ctx);
     }
 }
@@ -57,18 +56,18 @@ void nvbit_at_ctx_term(CUcontext ctx) {
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                          const char *name, void *params, CUresult *pStatus) {
     
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_at_cuda_event(ctx, is_exit, cbid, name, params, pStatus);
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_cuda_event(ctx, is_exit, cbid, name, params, pStatus);
     }
 
 }
 
 void nvbit_at_term() {
-    if (yosemite_tool == YOSEMITE_APP_METRICE) {
+    if (options.patch_name == GPU_PATCH_APP_METRIC) {
         yosemite_app_metric::app_metric_nvbit_at_term();
-    } else if (yosemite_tool == YOSEMITE_MEM_TRACE) {
+    } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_term();
     }
 }

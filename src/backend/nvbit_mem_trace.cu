@@ -1,4 +1,3 @@
-#include "backend/nvbit_mem_trace.h"
 
 #include <assert.h>
 #include <pthread.h>
@@ -21,7 +20,8 @@
 /* contains definition of the mem_access_t structure */
 #include "backend/common.h"
 
-#include "yosemite.h"
+#include "sanalyzer.h"
+
 
 namespace yosemite_mem_trace {
 
@@ -264,7 +264,7 @@ void mem_trace_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t 
             /* enable instrumented code to run */
             nvbit_enable_instrumented(ctx, func, true);
 
-            yosemite_kernel_start_callback(func_name);
+            yosemite_kernel_start_callback((std::string)func_name);
 
             if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
                 cbid == API_CUDA_cuLaunchKernelEx) {
@@ -322,30 +322,30 @@ void mem_trace_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t 
         if (cbid == API_CUDA_cuMemAlloc) {
             cuMemAlloc_params* p = (cuMemAlloc_params*)params;
             printf("ptr %p, size %u\n", p->dptr, p->bytesize);
-            yosemite_alloc_callback((CUdeviceptr)p->dptr, p->bytesize, API_CUDA_cuMemAlloc);
+            yosemite_alloc_callback((uint64_t)p->dptr, (uint64_t)p->bytesize, (int)API_CUDA_cuMemAlloc);
         } else if (cbid == API_CUDA_cuMemAlloc_v2) {    // cudaMalloc
             cuMemAlloc_v2_params* p = (cuMemAlloc_v2_params*)params;
             printf("ptr %llu, size %lu\n", *((unsigned long long*)p->dptr), p->bytesize);
-            yosemite_alloc_callback(*(p->dptr), p->bytesize, API_CUDA_cuMemAlloc_v2);
+            yosemite_alloc_callback((uint64_t)*(p->dptr), (uint64_t)p->bytesize, (int)API_CUDA_cuMemAlloc_v2);
         } else if (cbid == API_CUDA_cuMemAllocManaged) {    // cudaMallocManaged
             cuMemAllocManaged_params* p = (cuMemAllocManaged_params*)params;
             printf("ptr %p, flag %d, size %ld\n", p->dptr, p->flags, p->bytesize);
-            yosemite_alloc_callback(*(p->dptr), p->bytesize, API_CUDA_cuMemAllocManaged);
+            yosemite_alloc_callback((uint64_t)p->dptr, (uint64_t)p->bytesize, (int)API_CUDA_cuMemAllocManaged);
         } else if (cbid == API_CUDA_cuMemHostAlloc || cbid == API_CUDA_cuMemHostAlloc_v2) {
             cuMemHostAlloc_params* p = (cuMemHostAlloc_params*)params;
             printf("ptr %p, flag %d, size %ld\n", p->pp, p->Flags, p->bytesize);
         } else if (cbid == API_CUDA_cuMemAllocAsync) {
             cuMemAllocAsync_params* p = (cuMemAllocAsync_params*)params;
             printf("ptr %p, size %ld\n", p->dptr, p->bytesize);
-            yosemite_alloc_callback(*(p->dptr), p->bytesize, API_CUDA_cuMemAllocAsync);
+            yosemite_alloc_callback((uint64_t)p->dptr, (uint64_t)p->bytesize, (int)API_CUDA_cuMemAllocAsync);
         } else if (cbid == API_CUDA_cuMemAllocHost) {
             cuMemAllocHost_params* p = (cuMemAllocHost_params*)params;
             printf("ptr %p, size %u\n", p->pp, p->bytesize);
-            yosemite_alloc_callback((CUdeviceptr)p->pp, p->bytesize, API_CUDA_cuMemAllocHost);
+            yosemite_alloc_callback((uint64_t)p->pp, (uint64_t)p->bytesize, (int)API_CUDA_cuMemAllocHost);
         } else if (cbid == API_CUDA_cuMemAllocHost_v2) {
             cuMemAllocHost_v2_params* p = (cuMemAllocHost_v2_params*)params;
             printf("ptr %p, size %ld\n", p->pp, p->bytesize);
-            yosemite_alloc_callback((CUdeviceptr)p->pp, p->bytesize, API_CUDA_cuMemAllocHost_v2);
+            yosemite_alloc_callback((uint64_t)p->pp, (uint64_t)p->bytesize, (int)API_CUDA_cuMemAllocHost_v2);
         } else {
             printf("Not supported\n");
         }
@@ -364,19 +364,19 @@ void mem_trace_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t 
         if (cbid == API_CUDA_cuMemFree) {
             cuMemFree_params* p = (cuMemFree_params*)params;
             printf("ptr %u\n", p->dptr);
-            yosemite_free_callback(p->dptr);
+            yosemite_free_callback((uint64_t)p->dptr, 0, 0);
         } else if (cbid == API_CUDA_cuMemFree_v2) {   // cudaFree
             cuMemFree_v2_params* p = (cuMemFree_v2_params*)params;
             printf("v2 ptr %llu\n", p->dptr);
-            yosemite_free_callback(p->dptr);
+            yosemite_free_callback((uint64_t)p->dptr, 0, 0);
         } else if (cbid == API_CUDA_cuMemFreeHost) {
             cuMemFreeHost_params* p = (cuMemFreeHost_params*)params;
             printf("ptr %p\n", p->p);
-            yosemite_free_callback((CUdeviceptr)p->p);
+            yosemite_free_callback((uint64_t)p->p, 0, 0);
         } else if (cbid == API_CUDA_cuMemFreeAsync) {
             cuMemFreeAsync_params* p = (cuMemFreeAsync_params*)params;
             printf("ptr %llu\n", p->dptr);
-            yosemite_free_callback(p->dptr);
+            yosemite_free_callback((uint64_t)p->dptr, 0, 0);
         } else {
             printf("Not supported\n");
         }
@@ -408,7 +408,8 @@ void* recv_thread_fun(void* args) {
                 mem_access_t* ma =
                     (mem_access_t*)&recv_buffer[num_processed_bytes];
 
-                yosemite_memory_access_analysis(ma);
+                yosemite_gpu_data_analysis((void*)ma, ma->size);
+                // yosemite_memory_access_analysis(ma);
                 /*
                 std::stringstream ss;
                 ss << "CTX " << HEX(ctx) << " - grid_launch_id "
@@ -470,7 +471,7 @@ void mem_trace_nvbit_at_ctx_term(CUcontext ctx) {
     while (ctx_state->recv_thread_done != RecvThreadState::FINISHED)
         ;
 
-    yosemite_kernel_end_callback();
+    // yosemite_kernel_end_callback("end_kernel");
 
     ctx_state->channel_host.destroy(false);
     cudaFree(ctx_state->channel_dev);
