@@ -37,8 +37,8 @@ INCLUDES=-I$(NVBIT_PATH) -Iinclude/ -Itorch/include/
 LIBS = -L$(NVBIT_PATH) -lnvbit
 NVCC_PATH = -L $(subst bin/nvcc,lib64,$(shell which nvcc | tr -s /))
 
-SANALYER_INC = -I$(SANALYER_PATH)/include
-SANALYER_LIB = -L$(SANALYER_PATH)/lib -Xlinker -rpath -Xlinker =$(SANALYER_PATH)/lib -lsanalyzer
+SANALYZER_INC = -I$(SANALYZER_DIR)/include
+SANALYZER_LIB = -L$(SANALYZER_DIR)/lib -Xlinker -rpath -Xlinker $(SANALYZER_DIR)/lib -lsanalyzer
 
 SRC_DIR := src/
 OBJ_DIR := obj/
@@ -67,10 +67,10 @@ $(TORCH_OBJ_DIR):
 	mkdir -p $@
 
 $(NVBIT_TOOL): $(OBJS) $(NVBIT_PATH)/libnvbit.a
-	$(NVCC) -arch=$(ARCH) $(DEBUG_FLAGS) $(OBJS) $(LIBS) $(NVCC_PATH) -lcuda -lcudart_static -shared -o $@ $(SANALYER_LIB) 
+	$(NVCC) -arch=$(ARCH) $(DEBUG_FLAGS) $(OBJS) $(LIBS) $(NVCC_PATH) -lcuda -lcudart_static -shared -o $@ $(SANALYZER_LIB) 
 
 $(OBJ_DIR)%.o: $(SRC_DIR)/backend/%.cu
-	$(NVCC) -dc -c -std=c++17 $(INCLUDES) $(SANALYER_INC) -Xptxas -cloning=no -Xcompiler -Wall -arch=$(ARCH) $(DEBUG_FLAGS) -Xcompiler -fPIC $< -o $@
+	$(NVCC) -dc -c -std=c++17 $(INCLUDES) $(SANALYZER_INC) -Xptxas -cloning=no -Xcompiler -Wall -arch=$(ARCH) $(DEBUG_FLAGS) -Xcompiler -fPIC $< -o $@
 
 $(OBJ_DIR)%.o:: $(SRC_DIR)/inj_fns/%.cu
 	$(NVCC) $(INCLUDES) $(MAXRREGCOUNT_FLAG) -Xptxas -astoolspatch --keep-device-functions -arch=$(ARCH) -Xcompiler -Wall -Xcompiler -fPIC -c $< -o $@

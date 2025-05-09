@@ -2,11 +2,12 @@
 
 #include "backend/nvbit_app_metric.h"
 #include "backend/nvbit_mem_trace.h"
+#include "backend/nvbit_app_analysis.h"
 
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
-SanitizerOptions_t options;
+static AccelProfOptions_t options;
 
 /* nvbit_at_init() is executed as soon as the nvbit tool is loaded. We
  * typically do initializations in this call. In this case for instance we get
@@ -19,6 +20,8 @@ void nvbit_at_init() {
         yosemite_app_metric::app_metric_nvbit_at_init();
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_init();
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_at_init();
     }
 }
 
@@ -27,6 +30,8 @@ void nvbit_tool_init(CUcontext ctx) {
         yosemite_app_metric::app_metric_nvbit_tool_init(ctx);
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_tool_init(ctx);
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_tool_init(ctx);
     }
 }
 
@@ -35,6 +40,8 @@ void nvbit_at_ctx_init(CUcontext ctx) {
         yosemite_app_metric::app_metric_nvbit_at_ctx_init(ctx);
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_ctx_init(ctx);
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_at_ctx_init(ctx);
     }
 }
 
@@ -43,6 +50,8 @@ void nvbit_at_ctx_term(CUcontext ctx) {
         yosemite_app_metric::app_metric_nvbit_at_ctx_term(ctx);
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_ctx_term(ctx);
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_at_ctx_term(ctx);
     }
 }
 
@@ -60,6 +69,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         yosemite_app_metric::app_metric_nvbit_at_cuda_event(ctx, is_exit, cbid, name, params, pStatus);
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_cuda_event(ctx, is_exit, cbid, name, params, pStatus);
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_at_cuda_event(ctx, is_exit, cbid, name, params, pStatus);
     }
 
 }
@@ -69,5 +80,7 @@ void nvbit_at_term() {
         yosemite_app_metric::app_metric_nvbit_at_term();
     } else if (options.patch_name == GPU_PATCH_MEM_TRACE) {
         yosemite_mem_trace::mem_trace_nvbit_at_term();
+    } else if (options.patch_name == GPU_PATCH_APP_ANALYSIS_NVBIT) {
+        yosemite_app_analysis::app_analysis_nvbit_at_term();
     }
 }
