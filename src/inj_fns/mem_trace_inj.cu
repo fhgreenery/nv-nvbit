@@ -6,8 +6,8 @@
 /* for channel */
 #include "utils/channel.hpp"
 
-/* contains definition of the mem_access_t structure */
-#include "backend/common.h"
+/* contains definition of the nvbit_mem_access_t structure */
+#include "nvbit_common.h"
 
 extern "C" __device__ __noinline__ void instrument_mem(int pred, int opcode_id,
                                                        int mem_type,
@@ -26,7 +26,7 @@ extern "C" __device__ __noinline__ void instrument_mem(int pred, int opcode_id,
     const int laneid = get_laneid();
     const int first_laneid = __ffs(active_mask) - 1;
 
-    mem_access_t ma;
+    nvbit_mem_access_t ma;
 
     /* collect memory address information from other threads */
     for (int i = 0; i < 32; i++) {
@@ -41,7 +41,7 @@ extern "C" __device__ __noinline__ void instrument_mem(int pred, int opcode_id,
     ma.sm_id = get_smid();
     ma.warp_id = get_warpid();
     ma.opcode_id = opcode_id;
-    ma.mem_type = static_cast<InstrType::MemorySpace>(mem_type);
+    ma.mem_type = mem_type;
     ma.size = size;
     ma.is_read = (bool)is_read;
     ma.is_write = (bool)is_write;
@@ -49,6 +49,6 @@ extern "C" __device__ __noinline__ void instrument_mem(int pred, int opcode_id,
     /* first active lane pushes information on the channel */
     if (first_laneid == laneid) {
         ChannelDev* channel_dev = (ChannelDev*)pchannel_dev;
-        channel_dev->push(&ma, sizeof(mem_access_t));
+        channel_dev->push(&ma, sizeof(nvbit_mem_access_t));
     }
 }

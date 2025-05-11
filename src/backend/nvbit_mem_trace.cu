@@ -1,3 +1,4 @@
+#include "backend/nvbit_mem_trace.h"
 
 #include <assert.h>
 #include <pthread.h>
@@ -17,8 +18,8 @@
 /* for channel */
 #include "utils/channel.hpp"
 
-/* contains definition of the mem_access_t structure */
-#include "backend/common.h"
+/* contains definition of the nvbit_mem_access_t structure */
+#include "nvbit_common.h"
 
 #include "sanalyzer.h"
 
@@ -405,8 +406,8 @@ void* recv_thread_fun(void* args) {
         if (num_recv_bytes > 0) {
             uint32_t num_processed_bytes = 0;
             while (num_processed_bytes < num_recv_bytes) {
-                mem_access_t* ma =
-                    (mem_access_t*)&recv_buffer[num_processed_bytes];
+                nvbit_mem_access_t* ma =
+                    (nvbit_mem_access_t*)&recv_buffer[num_processed_bytes];
 
                 yosemite_gpu_data_analysis((void*)ma, ma->size);
                 // yosemite_memory_access_analysis(ma);
@@ -422,13 +423,13 @@ void* recv_thread_fun(void* args) {
                    << " - addrs: ";
 
 
-                for (int i = 0; i < 32; i++) {
+                for (int i = 0; i < GPU_WARP_SIZE_NVBIT; i++) {
                     ss << HEX(ma->addrs[i]) << " ";
                 }
                 printf("MEMTRACE: %s\n", ss.str().c_str());
                 */
 
-                num_processed_bytes += sizeof(mem_access_t);
+                num_processed_bytes += sizeof(nvbit_mem_access_t);
             }
         }
     }

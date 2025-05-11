@@ -9,11 +9,20 @@
 
 static AccelProfOptions_t options;
 
+static volatile int nvbit_debug_wait_flag = 1;
+
 /* nvbit_at_init() is executed as soon as the nvbit tool is loaded. We
  * typically do initializations in this call. In this case for instance we get
  * some environment variables values which we use as input arguments to the tool
  */
 void nvbit_at_init() {
+
+    const char* debug = std::getenv("ACCEL_PROF_DEBUG");
+    if (debug) {
+        while (nvbit_debug_wait_flag);
+    }
+    unsetenv("ACCEL_PROF_DEBUG");
+
     yosemite_init(options);
 
     if (options.patch_name == GPU_PATCH_APP_METRIC) {

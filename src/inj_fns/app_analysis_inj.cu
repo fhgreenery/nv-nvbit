@@ -3,63 +3,53 @@
 
 #include "utils/utils.h"
 
-extern "C" __device__ __noinline__ void count_mem_access1(int num_instrs,
-                                                     int count_warp_level,
-                                                     uint64_t pcounter) {
-    /* all the active threads will compute the active mask */
-    const int active_mask = __ballot_sync(__activemask(), 1);
+/* for channel */
+#include "utils/channel.hpp"
 
-    /* each thread will get a lane id (get_lane_id is implemented in
-     * utils/utils.h) */
-    const int laneid = get_laneid();
+/* contains definition of the nvbit_mem_access_t structure */
+#include "nvbit_common.h"
 
-    /* get the id of the first active thread */
-    const int first_laneid = __ffs(active_mask) - 1;
-
-    /* count all the active thread */
-    const int num_threads = __popc(active_mask);
-
-    /* only the first active thread will perform the atomic */
-    if (first_laneid == laneid) {
-        if (count_warp_level) {
-            atomicAdd((unsigned long long*)pcounter, 1 * num_instrs);
-        } else {
-            atomicAdd((unsigned long long*)pcounter, num_threads * num_instrs);
-        }
+extern "C" __device__ __noinline__ 
+void instrument_mem_app_analysis(int pred, int opcode_id,
+                                    int mem_type,
+                                    int size,
+                                    int is_read,
+                                    int is_write,
+                                    uint64_t addr,
+                                    uint64_t grid_launch_id,
+                                    uint64_t pchannel_dev) {
+    /* if thread is predicated off, return */
+    if (!pred) {
+        return;
     }
-}
 
-extern "C" __device__ __noinline__ void count_pred_off_mem_access1(int predicate,
-                                                       int count_warp_level,
-                                                       uint64_t pcounter) {
-    /* all the active threads will compute the active mask */
-    const int active_mask = __ballot_sync(__activemask(), 1);
-
-    /* each thread will get a lane id (get_lane_id is implemented in
-     * utils/utils.h) */
+    int active_mask = __ballot_sync(__activemask(), 1);
     const int laneid = get_laneid();
-
-    /* get the id of the first active thread */
     const int first_laneid = __ffs(active_mask) - 1;
 
-    /* get predicate mask */
-    const int predicate_mask = __ballot_sync(__activemask(), predicate);
+    nvbit_mem_access_t ma;
 
-    /* get mask of threads that have their predicate off */
-    const int mask_off = active_mask ^ predicate_mask;
+    /* collect memory address information from other threads */
+    for (int i = 0; i < 32; i++) {
+        ma.addrs[i] = __shfl_sync(active_mask, addr, i);
+    }
 
-    /* count the number of threads that have their predicate off */
-    const int num_threads_off = __popc(mask_off);
+    int4 cta = get_ctaid();
+    ma.grid_launch_id = grid_launch_id;
+    ma.cta_id_x = cta.x;
+    ma.cta_id_y = cta.y;
+    ma.cta_id_z = cta.z;
+    ma.sm_id = get_smid();
+    ma.warp_id = get_warpid();
+    ma.opcode_id = opcode_id;
+    ma.mem_type = mem_type;
+    ma.size = size;
+    ma.is_read = (bool)is_read;
+    ma.is_write = (bool)is_write;
 
-    /* only the first active thread updates the counter of predicated off
-     * threads */
+    /* first active lane pushes information on the channel */
     if (first_laneid == laneid) {
-        if (count_warp_level) {
-            if (predicate_mask == 0) {
-                atomicAdd((unsigned long long*)pcounter, 1);
-            }
-        } else {
-            atomicAdd((unsigned long long*)pcounter, num_threads_off);
-        }
+        ChannelDev* channel_dev = (ChannelDev*)pchannel_dev;
+        channel_dev->push(&ma, sizeof(nvbit_mem_access_t));
     }
 }
