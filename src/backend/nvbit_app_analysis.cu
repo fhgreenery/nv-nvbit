@@ -280,8 +280,8 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
             if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
                 cbid == API_CUDA_cuLaunchKernelEx) {
                 cuLaunchKernelEx_params* p = (cuLaunchKernelEx_params*)params;
-                PRINT("[NVBIT INFO] LAUNCH KERNEL: %s - grid launch id %ld\n"
-                    " - grid size (%d,%d,%d) - block size (%d,%d,%d) - nregs %d - shmem %d\n"
+                PRINT("[NVBIT INFO] LAUNCH KERNEL: %s - grid launch id %ld"
+                    " - grid size (%d,%d,%d) - block size (%d,%d,%d) - nregs %d - shmem %d"
                     " - CTX 0x%016lx - stream id %ld - Kernel pc 0x%016lx\n",
                     func_name, grid_launch_id, 
                     p->config->gridDimX, p->config->gridDimY, p->config->gridDimZ,
@@ -290,9 +290,9 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
                     (uint64_t)ctx, (uint64_t)p->config->hStream, pc);
             } else {
                 cuLaunchKernel_params* p = (cuLaunchKernel_params*)params;
-                PRINT("[NVBIT INFO] LAUNCH KERNEL: %s - grid launch id %ld\n"
-                    "    - grid size (%d,%d,%d) - block size (%d,%d,%d) - nregs %d - shmem %d\n"
-                    "    - CTX 0x%016lx - stream id %ld - Kernel pc 0x%016lx\n",
+                PRINT("[NVBIT INFO] LAUNCH KERNEL: %s - grid launch id %ld"
+                    " - grid size (%d,%d,%d) - block size (%d,%d,%d) - nregs %d - shmem %d"
+                    " - CTX 0x%016lx - stream id %ld - Kernel pc 0x%016lx\n",
                     func_name, grid_launch_id, 
                     p->gridDimX, p->gridDimY, p->gridDimZ,
                     p->blockDimX, p->blockDimY, p->blockDimZ,
@@ -427,7 +427,8 @@ void* recv_thread_fun(void* args) {
 
                 if (nvbit_num_mem_accesses % 10000000 == 0) {
                     PRINT("[NVBIT INFO] RECV THREAD: %s, LAUNCH ID %ld, NUM_MEM_ACCESSES_IN_THIS_LAUNCH %ld\n",
-                        id_to_opcode_map[ma->opcode_id].c_str(), nvbit_current_launch_id, nvbit_num_mem_accesses+1);
+                        id_to_opcode_map[ma->opcode_id].c_str(), nvbit_current_launch_id, 
+                        nvbit_num_mem_accesses == 0 ? 1 : nvbit_num_mem_accesses);
                 }
                 nvbit_num_mem_accesses++;
                 yosemite_gpu_data_analysis((void*)ma, ma->size);
