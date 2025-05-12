@@ -76,6 +76,8 @@ uint32_t instr_begin_interval = 0;
 uint32_t instr_end_interval = UINT32_MAX;
 int verbose = 1;
 
+int64_t nvbit_max_num_kernel_monitored = -1;
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
@@ -96,6 +98,11 @@ void app_analysis_nvbit_at_init() {
     GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
     std::string pad(100, '-');
     PRINT("%s\n", pad.c_str());
+
+    const char* env_filename = std::getenv("MAX_NUM_KERNEL_MONITORED");
+    if (env_filename) {
+        nvbit_max_num_kernel_monitored = std::stoi(env_filename);
+    }
 
     /* set mutex as recursive */
     pthread_mutexattr_t attr;
@@ -423,6 +430,13 @@ void* recv_thread_fun(void* args) {
                         id_to_opcode_map[ma->opcode_id].c_str(), nvbit_previous_launch_id, nvbit_num_mem_accesses);
                     nvbit_previous_launch_id = nvbit_current_launch_id;
                     nvbit_num_mem_accesses = 0;
+
+                    if (nvbit_max_num_kernel_monitored != -1 && (int64_t) nvbit_current_launch_id >= nvbit_max_num_kernel_monitored) {
+                        fprintf(stdout, "Max number of kernels monitored reached. Exiting...\n");
+                        fflush(stdout);
+                        yosemite_terminate();
+                        _exit(0);
+                    }
                 }
 
                 if (nvbit_num_mem_accesses % 10000000 == 0) {
