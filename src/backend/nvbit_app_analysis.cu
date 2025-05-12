@@ -30,6 +30,7 @@
 #else
 #define PRINT(...)
 #endif
+
 uint64_t nvbit_num_mem_accesses = 0;
 uint64_t nvbit_current_launch_id = 0;
 uint64_t nvbit_previous_launch_id = 0;

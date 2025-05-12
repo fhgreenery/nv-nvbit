@@ -38,7 +38,12 @@ LIBS = -L$(NVBIT_PATH) -lnvbit
 NVCC_PATH = -L $(subst bin/nvcc,lib64,$(shell which nvcc | tr -s /))
 
 SANALYZER_INC = -I$(SANALYZER_DIR)/include
-SANALYZER_LIB = -L$(SANALYZER_DIR)/lib -Xlinker -rpath -Xlinker $(SANALYZER_DIR)/lib -lsanalyzer
+SANALYZER_LDFLAGS = -L$(SANALYZER_DIR)/lib -Xlinker -rpath -Xlinker $(SANALYZER_DIR)/lib
+SANALYZER_LIB = -lsanalyzer
+
+TORCH_SCOPE_INC = -I$(TORCH_SCOPE_DIR)/include
+TORCH_SCOPE_LDFLAGS = -L$(TORCH_SCOPE_DIR)/lib -Xlinker -rpath -Xlinker $(TORCH_SCOPE_DIR)/lib
+TORCH_SCOPE_LIB = -ltorch_scope
 
 SRC_DIR := src/
 OBJ_DIR := obj/
@@ -67,10 +72,10 @@ $(TORCH_OBJ_DIR):
 	mkdir -p $@
 
 $(NVBIT_TOOL): $(OBJS) $(NVBIT_PATH)/libnvbit.a
-	$(NVCC) -arch=$(ARCH) $(DEBUG_FLAGS) $(OBJS) $(LIBS) $(NVCC_PATH) -lcuda -lcudart_static -shared -o $@ $(SANALYZER_LIB) 
+	$(NVCC) -arch=$(ARCH) $(DEBUG_FLAGS) $(OBJS) $(LIBS) $(NVCC_PATH) $(SANALYZER_LDFLAGS) $(TORCH_SCOPE_LDFLAGS) -lcuda -lcudart_static -shared -o $@ $(SANALYZER_LIB) $(TORCH_SCOPE_LIB)
 
 $(OBJ_DIR)%.o: $(SRC_DIR)/backend/%.cu
-	$(NVCC) -dc -c -std=c++17 $(INCLUDES) $(SANALYZER_INC) -Xptxas -cloning=no -Xcompiler -Wall -arch=$(ARCH) $(DEBUG_FLAGS) -Xcompiler -fPIC $< -o $@
+	$(NVCC) -dc -c -std=c++17 $(INCLUDES) $(SANALYZER_INC) $(TORCH_SCOPE_INC) -Xptxas -cloning=no -Xcompiler -Wall -arch=$(ARCH) $(DEBUG_FLAGS) -Xcompiler -fPIC $< -o $@
 
 $(OBJ_DIR)%.o:: $(SRC_DIR)/inj_fns/%.cu
 	$(NVCC) $(INCLUDES) $(MAXRREGCOUNT_FLAG) -Xptxas -astoolspatch --keep-device-functions -arch=$(ARCH) -Xcompiler -Wall -Xcompiler -fPIC -c $< -o $@
