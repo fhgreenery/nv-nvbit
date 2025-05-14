@@ -34,6 +34,8 @@
 uint64_t nvbit_num_mem_accesses = 0;
 uint64_t nvbit_current_launch_id = 0;
 uint64_t nvbit_previous_launch_id = 0;
+uint64_t nvbit_kernel_launch_id = 0;
+uint32_t nvbit_sample_rate = 1;
 
 
 namespace yosemite_app_analysis {
@@ -105,6 +107,11 @@ void app_analysis_nvbit_at_init() {
         nvbit_max_num_kernel_monitored = std::stoi(env_filename);
     }
 
+    const char* env_sample_rate = std::getenv("ACCEL_PROF_ENV_SAMPLE_RATE");
+    if (env_sample_rate) {
+        nvbit_sample_rate = std::stoi(env_sample_rate);
+    }
+
     /* set mutex as recursive */
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -118,6 +125,10 @@ void app_analysis_nvbit_at_init() {
 std::unordered_set<CUfunction> already_instrumented;
 
 void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
+    if (nvbit_kernel_launch_id % nvbit_sample_rate != 0) {
+        return;
+    }
+
     assert(ctx_state_map.find(ctx) != ctx_state_map.end());
     CTXstate* ctx_state = ctx_state_map[ctx];
 
@@ -261,6 +272,8 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
             cudaDeviceSynchronize();
             assert(cudaGetLastError() == cudaSuccess);
 
+            nvbit_kernel_launch_id++;
+
             /* instrument */
             instrument_function_if_needed(ctx, func);
 
@@ -281,7 +294,11 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
             nvbit_set_at_launch(ctx, func, (uint64_t)&grid_launch_id);
 
             /* enable instrumented code to run */
-            nvbit_enable_instrumented(ctx, func, true);
+            if (nvbit_kernel_launch_id % nvbit_sample_rate == 0) {
+                nvbit_enable_instrumented(ctx, func, true);
+            } else {
+                nvbit_enable_instrumented(ctx, func, false);
+            }
 
             yosemite_kernel_start_callback((std::string)func_name);
 
@@ -516,6 +533,11 @@ void app_analysis_nvbit_at_ctx_term(CUcontext ctx) {
 }
 
 void app_analysis_nvbit_at_term() {
+    // flush the last kernel data
+    nvbit_mem_access_t ma;
+    ma.grid_launch_id = grid_launch_id+1;
+    yosemite_gpu_data_analysis((void*)&ma, 0);
+
     yosemite_terminate();
 }
 
