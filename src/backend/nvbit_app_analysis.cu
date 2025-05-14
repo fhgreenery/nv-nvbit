@@ -23,6 +23,8 @@
 
 #include "sanalyzer.h"
 
+namespace yosemite_app_analysis {
+
 #define NVBIT_VERBOSE 1
 
 #if NVBIT_VERBOSE
@@ -38,7 +40,7 @@ uint64_t nvbit_kernel_launch_id = 0;
 uint32_t nvbit_sample_rate = 1;
 
 
-namespace yosemite_app_analysis {
+
 
 #define CHANNEL_SIZE (1l << 20)
 
