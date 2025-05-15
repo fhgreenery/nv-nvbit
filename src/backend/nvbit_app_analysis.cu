@@ -93,6 +93,18 @@ uint64_t grid_launch_id = 0;
 void* recv_thread_fun(void* args);
 
 void app_analysis_nvbit_at_init() {
+    const char* env_filename = std::getenv("MAX_NUM_KERNEL_MONITORED");
+    if (env_filename) {
+        nvbit_max_num_kernel_monitored = std::stoi(env_filename);
+        PRINT("[NVBIT INFO] Set max number of kernels monitored to %ld\n", nvbit_max_num_kernel_monitored);
+    }
+
+    const char* env_sample_rate = std::getenv("ACCEL_PROF_ENV_SAMPLE_RATE");
+    if (env_sample_rate) {
+        nvbit_sample_rate = std::stoi(env_sample_rate);
+        PRINT("[NVBIT INFO] Set sample rate to %u\n", nvbit_sample_rate);
+    }
+
     setenv("CUDA_MANAGED_FORCE_DEVICE_ALLOC", "1", 1);
     GET_VAR_INT(
         instr_begin_interval, "INSTR_BEGIN", 0,
@@ -104,15 +116,6 @@ void app_analysis_nvbit_at_init() {
     std::string pad(100, '-');
     PRINT("%s\n", pad.c_str());
 
-    const char* env_filename = std::getenv("MAX_NUM_KERNEL_MONITORED");
-    if (env_filename) {
-        nvbit_max_num_kernel_monitored = std::stoi(env_filename);
-    }
-
-    const char* env_sample_rate = std::getenv("ACCEL_PROF_ENV_SAMPLE_RATE");
-    if (env_sample_rate) {
-        nvbit_sample_rate = std::stoi(env_sample_rate);
-    }
 
     /* set mutex as recursive */
     pthread_mutexattr_t attr;
