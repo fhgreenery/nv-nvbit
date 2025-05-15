@@ -8,7 +8,6 @@
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
-namespace nvbit_tool_impl {
 
 #define NVBIT_VERBOSE 1
 
@@ -134,5 +133,3 @@ void nvbit_at_term() {
         yosemite_app_analysis::app_analysis_nvbit_at_term();
     }
 }
-
-} // namespace nvbit_tool_impl
