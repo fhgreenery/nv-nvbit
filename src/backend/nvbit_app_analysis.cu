@@ -295,15 +295,6 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
             /* set grid launch id at launch time */
             nvbit_set_at_launch(ctx, func, (uint64_t)&grid_launch_id);
 
-            /* enable instrumented code to run */
-            if (nvbit_kernel_launch_id % nvbit_sample_rate == 0) {
-                nvbit_enable_instrumented(ctx, func, true);
-            } else {
-                nvbit_enable_instrumented(ctx, func, false);
-            }
-
-            yosemite_kernel_start_callback((std::string)func_name);
-
             if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
                 cbid == API_CUDA_cuLaunchKernelEx) {
                 cuLaunchKernelEx_params* p = (cuLaunchKernelEx_params*)params;
@@ -326,6 +317,17 @@ void app_analysis_nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda
                     nregs, shmem_static_nbytes + p->sharedMemBytes,
                     (uint64_t)ctx, (uint64_t)p->hStream, pc);
             }
+
+            /* enable instrumented code to run */
+            if (nvbit_kernel_launch_id % nvbit_sample_rate == 0) {
+                PRINT("[NVBIT INFO] Instrumenting kernel %s\n", func_name);
+                nvbit_enable_instrumented(ctx, func, true);
+            } else {
+                PRINT("[NVBIT INFO] Skip instrumenting kernel %s\n", func_name);
+                nvbit_enable_instrumented(ctx, func, false);
+            }
+
+            yosemite_kernel_start_callback((std::string)func_name);
         } else {
             // make sure user kernel finishes to avoid deadlock
             cudaDeviceSynchronize();
