@@ -23,14 +23,14 @@ static AccelProfOptions_t nvbit_options;
 static volatile int nvbit_debug_wait_flag = 1;
 
 
-void nvbit_tensor_malloc_callback(uint64_t ptr, int64_t size, int64_t allocated, int64_t reserved) {
+void nvbit_tensor_malloc_callback(uint64_t ptr, int64_t size, int64_t allocated, int64_t reserved, int device_id) {
     PRINT("[NVBIT INFO] Malloc tensor %p with size %ld, allocated %ld, reserved %ld\n", (void*)ptr, size, allocated, reserved);
-    yosemite_tensor_malloc_callback(ptr, size, allocated, reserved);
+    yosemite_tensor_malloc_callback(ptr, size, allocated, reserved, device_id);
 }
 
-void nvbit_tensor_free_callback(uint64_t ptr, int64_t size, int64_t allocated, int64_t reserved) {
+void nvbit_tensor_free_callback(uint64_t ptr, int64_t size, int64_t allocated, int64_t reserved, int device_id) {
     PRINT("[NVBIT INFO] Free tensor %p with size %ld, allocated %ld, reserved %ld\n", (void*)ptr, size, allocated, reserved);
-    yosemite_tensor_free_callback(ptr, size, allocated, reserved);
+    yosemite_tensor_free_callback(ptr, size, allocated, reserved, device_id);
 }
 
 void nvbit_operator_start_callback(void* ctx, std::string op_name) {
